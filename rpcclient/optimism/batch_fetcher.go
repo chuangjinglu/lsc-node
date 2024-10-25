@@ -196,13 +196,13 @@ func (f *Fetcher) GetL2BatchHeader(l1BlockNumber, l2BlockNumber uint64, txHash s
 		}
 	}
 
-	iterL1 := l1BlockNumber
+	iterL1 := f.lastSyncedL1BlockNumber.Load()
 	for {
 		if l2BlockNumber > 0 {
 			f.lastSyncedL2BlockNumber.Store(l2BlockNumber - 1)
 		}
 
-		if f.lastSyncedL1BlockNumber.Load() == l1BlockNumber {
+		if iterL1 == l1BlockNumber {
 			bh, err := checkTxHash(core.GetContextWithTimeout(getL2BatchHeaderTimeout))
 			if err != nil {
 				return nil, err
@@ -212,6 +212,8 @@ func (f *Fetcher) GetL2BatchHeader(l1BlockNumber, l2BlockNumber uint64, txHash s
 			}
 			iterL1 += 1
 			continue
+		} else if iterL1 < l1BlockNumber {
+			iterL1 = l1BlockNumber
 		}
 
 		frames, err := f.fetchBlock(iterL1)
