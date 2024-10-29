@@ -1,6 +1,7 @@
 package optimism
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -31,7 +32,7 @@ const (
 	searchLimit             = 1024
 	maxTxBlobCount          = 10000
 	fetchInterval           = 5 * time.Second
-	getL2BatchHeaderTimeout = 30 * time.Second
+	getL2BatchHeaderTimeout = 5 * time.Second
 	iterateWarningLevel     = 10
 )
 
@@ -160,90 +161,98 @@ func (f *Fetcher) InitFetch() {
 // GetL2BatchHeader returns the next L2 batch header for the given L1 block number
 // and the Tx Hash
 func (f *Fetcher) GetL2BatchHeader(l1BlockNumber, l2BlockNumber uint64, txHash string) (*sequencerv2types.BatchHeader, error) {
-	chBatchHeader := make(chan *sequencerv2types.BatchHeader, 1) // buffered to avoid blocking
+	iterL1 := f.lastSyncedL1BlockNumber.Load()
 
-	go func() {
-		defer close(chBatchHeader)
-		for {
-			batchHeader, err := f.nextBatchHeader()
-			if err != nil {
-				f.chErr <- err
-				return
-			}
-			if batchHeader.L1BlockNumber == l1BlockNumber {
-				if len(txHash) > 0 && batchHeader.L1TxHash == txHash {
-					chBatchHeader <- batchHeader
-					return
-				}
-				if l2BlockNumber > 0 && batchHeader.L2FromBlockNumber == l2BlockNumber {
-					chBatchHeader <- batchHeader
-					return
-				}
-			}
+	convertBatchHeader := func(batchesRef *BatchesRef) (*sequencerv2types.BatchHeader, error) {
+		header := sequencerv2types.BatchHeader{
+			L1BlockNumber:     batchesRef.L1BlockNumber,
+			L1TxHash:          batchesRef.L1TxHash.Hex(),
+			L1TxIndex:         uint32(batchesRef.L1TxIndex),
+			ChainId:           uint32(f.chainID.Uint64()),
+			L2FromBlockNumber: batchesRef.L2BlockNumber,
+			L2ToBlockNumber:   batchesRef.L2BlockNumber + uint64(batchesRef.L2BlockCount) - 1,
 		}
-	}()
 
-	checkTxHash := func(ctx context.Context) (*sequencerv2types.BatchHeader, error) {
-		for {
-			select {
-			case <-ctx.Done():
-				return nil, nil
-			case err := <-f.chErr:
-				return nil, fmt.Errorf("batch decoder err: %v", err)
-			case batchHeader := <-chBatchHeader:
-				return batchHeader, nil
-			}
+		lastHash, err := f.l2Client.GetBlockHashByNumber(header.L2ToBlockNumber)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get block hash for L2 block %d: %w", header.L2ToBlockNumber, err)
 		}
+		header.L2Blocks = []*sequencerv2types.BlockHeader{
+			{
+				BlockNumber: header.L2ToBlockNumber,
+				BlockHash:   lastHash.Hex(),
+			},
+		}
+		return &header, nil
 	}
 
-	iterL1 := f.lastSyncedL1BlockNumber.Load()
 	for {
 		if l2BlockNumber > 0 {
 			f.lastSyncedL2BlockNumber.Store(l2BlockNumber - 1)
 		}
 
-		if iterL1 == l1BlockNumber {
-			bh, err := checkTxHash(core.GetContextWithTimeout(getL2BatchHeaderTimeout))
-			if err != nil {
-				return nil, err
-			}
-			if bh != nil {
-				return bh, nil
-			}
-			iterL1 += 1
-			continue
-		} else if iterL1 < l1BlockNumber {
+		if iterL1 < l1BlockNumber {
 			iterL1 = l1BlockNumber
+			frames, err := f.fetchBlock(iterL1)
+			if err != nil {
+				return nil, fmt.Errorf("failed to fetch block %d: %w", iterL1, err)
+			}
+
+			for _, framesRef := range frames {
+				select {
+				case f.chFramesRef <- framesRef:
+					// Successfully sent
+				default:
+					// Channel is blocked; handle accordingly
+					logger.Warnf("chFramesRef is blocked when sending framesRef for block %d", iterL1)
+				}
+			}
+
+			if len(frames) == 0 {
+				iterL1++
+				continue
+			}
 		}
 
-		frames, err := f.fetchBlock(iterL1)
-		if err != nil {
-			return nil, err
-		}
-		for _, framesRef := range frames {
-			f.chFramesRef <- framesRef
+		ctx, cancel := context.WithTimeout(context.Background(), getL2BatchHeaderTimeout)
+		// Do not defer cancel inside a loop
+		defer cancel()
+
+	outloop:
+		for {
+			select {
+			case <-ctx.Done():
+				// Timeout reached; proceed to the next iteration
+				break outloop
+			case err := <-f.chErr:
+				return nil, fmt.Errorf("batch decoder error: %w", err)
+			case batchesRef, ok := <-f.batchHeaders:
+				if !ok {
+					return nil, errors.New("batch headers channel is closed")
+				}
+				if batchesRef.L1BlockNumber != l1BlockNumber {
+					continue
+				}
+				if txHash != "" && bytes.Equal(batchesRef.L1TxHash[:], core.Hex2Bytes(txHash)) {
+					f.lastSyncedL1BlockNumber.Store(iterL1)
+					return convertBatchHeader(batchesRef)
+				}
+				if l2BlockNumber > 0 && batchesRef.L2BlockNumber == l2BlockNumber {
+					f.lastSyncedL1BlockNumber.Store(iterL1)
+					return convertBatchHeader(batchesRef)
+				}
+			}
 		}
 
-		if len(frames) == 0 {
-			iterL1 += 1
-			continue
-		}
+		// Explicitly cancel the context to free resources
+		cancel()
 
-		bh, err := checkTxHash(core.GetContextWithTimeout(getL2BatchHeaderTimeout))
-		if err != nil {
-			return nil, err
-		}
-		if bh != nil {
-			f.lastSyncedL1BlockNumber.Store(iterL1)
-			return bh, nil
-		}
-
-		iterL1 += 1
-		if (iterL1-l1BlockNumber)%iterateWarningLevel == iterateWarningLevel-1 {
-			logger.Warnf("no batch header found for L1 block number: %d Iteration: %d", l1BlockNumber, iterL1)
+		iterL1++
+		if (iterL1-l1BlockNumber)%iterateWarningLevel == 0 {
+			logger.Warnf("No batch header found for L1 block number: %d, Iteration: %d", l1BlockNumber, iterL1)
 		}
 		if iterL1-l1BlockNumber > searchLimit {
-			return nil, errors.New("batch header not found after searching the limit")
+			return nil, errors.New("batch header not found after exceeding search limit")
 		}
 	}
 }
