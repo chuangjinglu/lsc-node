@@ -162,6 +162,7 @@ func (f *Fetcher) InitFetch() {
 // and the Tx Hash
 func (f *Fetcher) GetL2BatchHeader(l1BlockNumber, l2BlockNumber uint64, txHash string) (*sequencerv2types.BatchHeader, error) {
 	iterL1 := f.lastSyncedL1BlockNumber.Load()
+	isFirst := true
 
 	convertBatchHeader := func(batchesRef *BatchesRef) (*sequencerv2types.BatchHeader, error) {
 		header := sequencerv2types.BatchHeader{
@@ -191,8 +192,10 @@ func (f *Fetcher) GetL2BatchHeader(l1BlockNumber, l2BlockNumber uint64, txHash s
 			f.lastSyncedL2BlockNumber.Store(l2BlockNumber - 1)
 		}
 
-		if iterL1 < l1BlockNumber {
-			iterL1 = l1BlockNumber
+		if !isFirst || iterL1 < l1BlockNumber {
+			if iterL1 < l1BlockNumber {
+				iterL1 = l1BlockNumber
+			}
 			frames, err := f.fetchBlock(iterL1)
 			if err != nil {
 				return nil, fmt.Errorf("failed to fetch block %d: %w", iterL1, err)
@@ -254,6 +257,7 @@ func (f *Fetcher) GetL2BatchHeader(l1BlockNumber, l2BlockNumber uint64, txHash s
 		if iterL1-l1BlockNumber > searchLimit {
 			return nil, errors.New("batch header not found after exceeding search limit")
 		}
+		isFirst = false
 	}
 }
 
