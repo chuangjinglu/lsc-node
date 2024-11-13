@@ -2,6 +2,7 @@ package optimism
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -190,6 +191,8 @@ func (f *Fetcher) findBlockNumber(parentHashCheck []byte) (bool, uint64) {
 // pushBatch pushes the L2 block batch to the cache.
 func (f *Fetcher) pushBatchesRef(batchesRef *BatchesRef) error {
 	for i, batch := range batchesRef.Batches {
+		logger.Infof("L2 Block batch: {ParentHashCheck: %s, TxHash: %v, BlockCount: %d} L2 Block Number: %d", hex.EncodeToString(batch.ParentHashCheck), batch.TxHash.Hex(), batch.BlockCount, f.lastSyncedL2BlockNumber.Load())
+
 		if batch.BlockCount == 0 {
 			logger.Errorf("batch decoder invalid batch: %+v", batchesRef)
 			return fmt.Errorf("invalid batch")
@@ -209,7 +212,7 @@ func (f *Fetcher) pushBatchesRef(batchesRef *BatchesRef) error {
 		}
 		if !bytes.Equal(batch.ParentHashCheck, parentHash[:20]) {
 			if i > 0 {
-				logger.Errorf("parent hash mismatch L2 BlockNumber: %d, Parent Hash: %v, Ref: %+v", f.lastSyncedL2BlockNumber.Load(), parentHash, batch)
+				logger.Errorf("parent hash mismatch L2 BlockNumber: %d, Parent Hash: %v, Ref: {ParentHashCheck: %s, TxHash: %v}", f.lastSyncedL2BlockNumber.Load(), parentHash, hex.EncodeToString(batch.ParentHashCheck), batch.TxHash.Hex())
 				return fmt.Errorf("parent hash mismatch")
 			}
 			// try to find the correct L2 block number

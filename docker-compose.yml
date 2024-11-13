@@ -1,5 +1,3 @@
-version: "3.7"
-
 services:
   simsequencer:
     container_name: sequencer
@@ -172,7 +170,7 @@ services:
   simnode7:
     container_name: node7
     image: lagrange-node
-    
+
     networks:
       localnet:
         ipv4_address: 192.168.20.10
