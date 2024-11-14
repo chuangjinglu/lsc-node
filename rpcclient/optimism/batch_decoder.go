@@ -120,6 +120,7 @@ func (f *Fetcher) parseBatch(batchData *derive.BatchData) (*L2BlockBatch, error)
 			logger.Errorf("Failed to get singular batch: %v", err)
 			return nil, err
 		}
+		logger.Infof("SingularBatch: {ParentHash: %v, Transactions: %d}", batch.ParentHash.Hex(), len(batch.Transactions))
 		return &L2BlockBatch{
 			ParentHash:      batch.ParentHash,
 			ParentHashCheck: batch.ParentHash[:20],
@@ -148,6 +149,7 @@ func (f *Fetcher) parseBatch(batchData *derive.BatchData) (*L2BlockBatch, error)
 				break
 			}
 		}
+		logger.Infof("SpanBatch: {ParentHashCheck: %s, TxHash: %v, BlockCount: %d}", hex.EncodeToString(batch.ParentCheck[:]), txHash.Hex(), len(batch.Batches))
 		return &L2BlockBatch{
 			ParentHashCheck: batch.ParentCheck[:],
 			TxHash:          txHash,
