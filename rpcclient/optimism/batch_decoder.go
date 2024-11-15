@@ -56,7 +56,7 @@ func (f *Fetcher) handleFrames() error {
 					L1TxHash  common.Hash
 					L1TxIndex int
 				}{
-					derive.NewChannel(frame.ID, blockRef),
+					derive.NewChannel(frame.ID, blockRef, false),
 					framesRef.L1TxHash,
 					framesRef.TxIndex,
 				}

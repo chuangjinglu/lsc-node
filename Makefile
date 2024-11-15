@@ -35,7 +35,7 @@ proto-gen:
 
 
 # Linting, Teseting, Benchmarking
-golangci_lint_cmd=github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
+golangci_lint_cmd=github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.0
 
 install-linter:
 	@echo "--> Installing linter"
