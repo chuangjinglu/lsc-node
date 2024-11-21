@@ -6,7 +6,7 @@ require (
 	github.com/Lagrange-Labs/lsc-node/core v0.1.2
 	github.com/Lagrange-Labs/lsc-node/signer v0.1.2
 	github.com/andybalholm/brotli v1.1.1
-	github.com/ethereum-optimism/optimism v1.9.5
+	github.com/ethereum-optimism/optimism v1.10.0
 	github.com/ethereum/go-ethereum v1.14.11
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/mitchellh/mapstructure v1.5.0
@@ -49,7 +49,7 @@ require (
 	github.com/deckarep/golang-set/v2 v2.6.0 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
 	github.com/ethereum-optimism/go-ethereum-hdwallet v0.1.3 // indirect
-	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20241113154227-e72c6311f6e7 // indirect
+	github.com/ethereum-optimism/superchain-registry/superchain v0.0.0-20241119111730-bee358f6d6e6 // indirect
 	github.com/ethereum/c-kzg-4844 v1.0.3 // indirect
 	github.com/ethereum/go-verkle v0.2.2 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
