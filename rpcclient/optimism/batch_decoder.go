@@ -120,7 +120,6 @@ func (f *Fetcher) parseBatch(batchData *derive.BatchData) (*L2BlockBatch, error)
 			logger.Errorf("Failed to get singular batch: %v", err)
 			return nil, err
 		}
-		logger.Infof("SingularBatch: {ParentHash: %v, Transactions: %d}", batch.ParentHash.Hex(), len(batch.Transactions))
 		return &L2BlockBatch{
 			ParentHash:      batch.ParentHash,
 			ParentHashCheck: batch.ParentHash[:20],
@@ -149,7 +148,6 @@ func (f *Fetcher) parseBatch(batchData *derive.BatchData) (*L2BlockBatch, error)
 				break
 			}
 		}
-		logger.Infof("SpanBatch: {ParentHashCheck: %s, TxHash: %v, BlockCount: %d}", hex.EncodeToString(batch.ParentCheck[:]), txHash.Hex(), len(batch.Batches))
 		return &L2BlockBatch{
 			ParentHashCheck: batch.ParentCheck[:],
 			TxHash:          txHash,
@@ -193,10 +191,6 @@ func (f *Fetcher) findBlockNumber(parentHashCheck []byte) (bool, uint64) {
 // pushBatch pushes the L2 block batch to the cache.
 func (f *Fetcher) pushBatchesRef(batchesRef *BatchesRef) error {
 	for i, batch := range batchesRef.Batches {
-		lastSyncedL2BlockNumber := f.lastSyncedL2BlockNumber.Load()
-
-		logger.Infof("L2 Block batch: {ParentHashCheck: %s, TxHash: %v, BlockCount: %d} L2 Block Number: %d", hex.EncodeToString(batch.ParentHashCheck), batch.TxHash.Hex(), batch.BlockCount, lastSyncedL2BlockNumber)
-
 		if batch.BlockCount == 0 {
 			logger.Errorf("batch decoder invalid batch: %+v", batchesRef)
 			return fmt.Errorf("invalid batch")
@@ -210,14 +204,14 @@ func (f *Fetcher) pushBatchesRef(batchesRef *BatchesRef) error {
 		}
 
 		// check the parent hash of the first block is correct
-		parentHash, err := f.l2Client.GetBlockHashByNumber(lastSyncedL2BlockNumber)
+		parentHash, err := f.l2Client.GetBlockHashByNumber(f.lastSyncedL2BlockNumber.Load())
 		if err != nil {
 			logger.Errorf("failed to get L2 block hash: %v", err)
 			return err
 		}
 		if !bytes.Equal(batch.ParentHashCheck, parentHash[:20]) {
 			if i > 0 {
-				logger.Errorf("parent hash mismatch L2 BlockNumber: %d, Parent Hash: %v, Ref: {ParentHashCheck: %s, TxHash: %v, BlockCount: %d}", lastSyncedL2BlockNumber, parentHash, hex.EncodeToString(batch.ParentHashCheck), batch.TxHash.Hex(), batch.BlockCount)
+				logger.Errorf("Decoder - parent hash mismatch %d L2 BlockNumber: %d, Parent Hash: %v, Ref: {ParentHashCheck: %s, TxHash: %v, BlockCount: %d}", i, f.lastSyncedL2BlockNumber.Load(), parentHash, hex.EncodeToString(batch.ParentHashCheck), batch.TxHash.Hex(), batch.BlockCount)
 				return fmt.Errorf("parent hash mismatch")
 			}
 			// try to find the correct L2 block number
@@ -233,12 +227,11 @@ func (f *Fetcher) pushBatchesRef(batchesRef *BatchesRef) error {
 				f.lastSyncedL2BlockNumber.Store(bn)
 			}
 		}
+		
 		if i == 0 {
-			batchesRef.L2BlockNumber = lastSyncedL2BlockNumber + 1
+			batchesRef.L2BlockNumber = f.lastSyncedL2BlockNumber.Load() + 1
 		}
 		f.lastSyncedL2BlockNumber.Add(uint64(batch.BlockCount))
-
-		logger.Info("Update lastSyncedL2BlockNumber of fetcher")
 	}
 
 	f.batchHeaders <- batchesRef

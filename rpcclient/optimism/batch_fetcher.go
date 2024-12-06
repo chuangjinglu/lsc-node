@@ -563,8 +563,6 @@ func (f *Fetcher) fetchBlock(blockNumber uint64) ([]*FramesRef, error) {
 		}
 	}
 	for _, data := range txDatas {
-		logger.Infof("Frame for %d TxIndex: %d TxHash: %v Data: %x", blockNumber, data.TxIndex, data.TxHash.Hex(), data.Data)
-
 		frames, err := derive.ParseFrames(data.Data)
 		if err != nil {
 			logger.Errorf("failed to parse frames: %v", err)
