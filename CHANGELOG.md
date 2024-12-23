@@ -39,13 +39,25 @@ Change Categories
 
 ### Features
 
-* [#614](https://github.com/Lagrange-Labs/lsc-node/issues/614) Optimize the verify logic on the rpc clients.
+### Enhancements
 
-* [#603](https://github.com/Lagrange-Labs/lsc-node/issues/603) Implement the `UploadStatus` api to check the client status.
+### Fixes
+
+### Breaking Changes
+
+- [#640](https://github.com/Lagrange-Labs/lsc-node/pull/640) Update dependencies for Optimism Holocene upgrade
+
+## [v1.2.0](https://github.com/Lagrange-Labs/lsc-node/releases/tag/v1.2.0) *2024-10-31*
+
+### Features
+
+- [#614](https://github.com/Lagrange-Labs/lsc-node/issues/614) Optimize the verify logic on the rpc clients.
+
+- [#603](https://github.com/Lagrange-Labs/lsc-node/issues/603) Implement the `UploadStatus` api to check the client status.
 
 ### Enhancements
 
-* [#612](https://github.com/Lagrange-Labs/lsc-node/issues/622) Adjust the go module name regarding the repo name update.
+- [#612](https://github.com/Lagrange-Labs/lsc-node/issues/622) Adjust the go module name regarding the repo name update.
 
 ### Fixes
 
@@ -55,33 +67,31 @@ Change Categories
 
 ### Features
 
-* [#525](https://github.com/Lagrange-Labs/lsc-node/pull/525) Add the logic to check the version compatibility.
+- [#525](https://github.com/Lagrange-Labs/lsc-node/pull/525) Add the logic to check the version compatibility.
 
 ### Enhancements
 
-* [#523](https://github.com/Lagrange-Labs/lsc-node/issues/523) Add the `Signer` module.
-* [#530](https://github.com/Lagrange-Labs/lsc-node/issues/530) Create the own go modules to manage the dependencies.
-* [#550](https://github.com/Lagrange-Labs/lsc-node/pull/550) Add G2 based BLS scheme.
-* [#556](https://github.com/Lagrange-Labs/lsc-node/pull/556) Refactor the optimism rpc in a more combinient way.
+- [#523](https://github.com/Lagrange-Labs/lsc-node/issues/523) Add the `Signer` module.
+- [#530](https://github.com/Lagrange-Labs/lsc-node/issues/530) Create the own go modules to manage the dependencies.
+- [#550](https://github.com/Lagrange-Labs/lsc-node/pull/550) Add G2 based BLS scheme.
+- [#556](https://github.com/Lagrange-Labs/lsc-node/pull/556) Refactor the optimism rpc in a more combinient way.
 
 ### Fixes
 
 ### Breaking Changes
 
-* [#557](https://github.com/Lagrange-Labs/lsc-node/pull/557) Update the batch hash logic with the merkle root.
-
+- [#557](https://github.com/Lagrange-Labs/lsc-node/pull/557) Update the batch hash logic with the merkle root.
 
 ## [v1.0.0](https://github.com/Lagrange-Labs/lsc-node/releases/tag/v1.0.0) *2024-07-30*
 
 ### Features
 
-* [#480](https://github.com/Lagrange-Labs/lsc-node/issues/480) Make the epoch period flexible.
+- [#480](https://github.com/Lagrange-Labs/lsc-node/issues/480) Make the epoch period flexible.
 
 ### Enhancements
 
-* [#438](https://github.com/Lagrange-Labs/lsc-node/issues/438) Reduce the L2 RPC calls from the client node.
+- [#438](https://github.com/Lagrange-Labs/lsc-node/issues/438) Reduce the L2 RPC calls from the client node.
 
 ### Fixes
 
-* [#474](https://github.com/Lagrange-Labs/lsc-node/issues/474) Fix the committee root verification failure.
-
+- [#474](https://github.com/Lagrange-Labs/lsc-node/issues/474) Fix the committee root verification failure.
