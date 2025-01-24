@@ -86,7 +86,7 @@ func parseL2Message(msg []byte, requestId *common.Hash, chainId *big.Int, depth 
 		return nil, errors.New("L2 message kind SignedCompressedTx is unimplemented")
 	default:
 		// ignore invalid message kind
-		return nil, fmt.Errorf("unkown L2 message kind %v", l2KindBuf[0])
+		return nil, fmt.Errorf("unknown L2 message kind %v", l2KindBuf[0])
 	}
 }
 

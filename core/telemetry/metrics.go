@@ -61,7 +61,7 @@ func NewGlobal(cfg Config) (err error) {
 	return nil
 }
 
-// SetLabels sets the global labels.
+// SetLabel sets the global labels.
 func SetLabel(label metrics.Label) {
 	globalLabels = append(globalLabels, label)
 }

@@ -64,7 +64,7 @@ func (f *Fetcher) handleFrames() error {
 			ch := channels[frame.ID]
 
 			if ch.Channel.IsReady() {
-				logger.Errorf("Invaild Frame: channel %v is ready", frame.ID)
+				logger.Errorf("Invalid Frame: channel %v is ready", frame.ID)
 				break
 			}
 
@@ -188,7 +188,7 @@ func (f *Fetcher) findBlockNumber(parentHashCheck []byte) (bool, uint64) {
 	return false, 0
 }
 
-// pushBatch pushes the L2 block batch to the cache.
+// pushBatchesRef pushes the L2 block batch to the cache.
 func (f *Fetcher) pushBatchesRef(batchesRef *BatchesRef) error {
 	for i, batch := range batchesRef.Batches {
 		if batch.BlockCount == 0 {
